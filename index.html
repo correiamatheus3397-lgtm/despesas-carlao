@@ -1138,8 +1138,17 @@ Regras:
     });
 
     const data = await response.json();
+
+    // erro da API (ex: chave inválida, rate limit)
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
     const text = data.content?.map(b => b.text || '').join('').trim();
-    const json = JSON.parse(text.replace(/```json|```/g, '').trim());
+    if (!text) throw new Error('Resposta vazia da API. Tente novamente.');
+
+    // extrai JSON mesmo que venha com markdown ou texto ao redor
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('IA não retornou JSON válido: ' + text.slice(0, 200));
+    const json = JSON.parse(match[0]);
 
     // ── Preencher campos ──
     const labels = { USD:'usd', BRL:'brl', EUR:'eur' };
